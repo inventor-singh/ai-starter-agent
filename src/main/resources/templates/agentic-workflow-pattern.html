@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title} + ' - Agentic AI Workflows'">Workflow Pattern</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: linear-gradient(-45deg, #4B286D 0%, #E53293 75%) !important;
+            box-shadow: 0 4px 20px rgba(75, 40, 109, 0.2);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: white !important;
+        }
+        
+        .content-container {
+            background: white;
+            border-radius: 20px;
+            margin: 2rem 0;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pattern-header {
+            background: linear-gradient(-45deg, #4B286D 0%, #E53293 75%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .demo-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            border-left: 5px solid #4B286D;
+        }
+        
+        .code-section {
+            background: #2d3748;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 2rem 0;
+        }
+        
+        .code-header {
+            background: #4a5568;
+            color: white;
+            padding: 1rem;
+            font-weight: 600;
+        }
+        
+        .btn-demo {
+            background: linear-gradient(-45deg, #4B286D 0%, #E53293 75%);
+            border: none;
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-demo:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(75, 40, 109, 0.4);
+            color: white;
+        }
+        
+        .workflow-diagram {
+            background: white;
+            border: 2px dashed #4B286D;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 1rem 0;
+            text-align: center;
+        }
+        
+        .step-box {
+            background: #E53293;
+            color: white;
+            padding: 1rem;
+            margin: 0.5rem;
+            border-radius: 10px;
+            display: inline-block;
+            min-width: 120px;
+        }
+        
+        .arrow {
+            color: #4B286D;
+            font-size: 1.5rem;
+            margin: 0 1rem;
+        }
+        
+        .result-area {
+            background: #e8f5e8;
+            border: 1px solid #28a745;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        .use-case-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        
+        .implementation-tabs .nav-link {
+            color: #4B286D;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            margin: 0 0.5rem;
+        }
+        
+        .implementation-tabs .nav-link.active {
+            background: #4B286D;
+            color: white;
+            border-color: #4B286D;
+        }
+        
+        pre {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/agentic-workflows">
+                <i class="bi bi-arrow-left me-2"></i>Agentic Workflows
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link text-white" href="/chat">
+                    <i class="bi bi-chat-dots me-1"></i>Chat
+                </a>
+                <a class="nav-link text-white" href="#" sec:authorize="hasRole('ADMIN')" th:href="@{/admin}">
+                    <i class="bi bi-gear me-1"></i>Admin
+                </a>
+                <a class="nav-link text-white" href="/logout">
+                    <i class="bi bi-box-arrow-right me-1"></i>Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="content-container">
+            <!-- Pattern Header -->
+            <div class="pattern-header">
+                <h1 th:text="${title}">Workflow Pattern</h1>
+                <p class="lead mb-0" th:text="${description}">Pattern description</p>
+            </div>
+
+            <!-- Dynamic Content Based on Pattern -->
+            <div th:if="${pattern == 'chain'}">
+                <!-- Chain Workflow Content -->
+                <div class="row">
+                    <div class="col-md-8">
+                        <h3><i class="bi bi-info-circle me-2"></i>When to Use Chain Workflow</h3>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check-circle text-success me-2"></i>Tasks with clear sequential steps</li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i>When you want to trade latency for higher accuracy</li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i>When each step builds on the previous step's output</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="use-case-card">
+                            <h5><i class="bi bi-lightbulb me-2"></i>Example Use Cases</h5>
+                            <small>
+                                • Content analysis & summarization<br>
+                                • Multi-step reasoning tasks<br>
+                                • Document processing pipelines
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workflow Diagram -->
+                <div class="workflow-diagram">
+                    <h4 class="mb-3">Chain Workflow Flow</h4>
+                    <div class="d-flex align-items-center justify-content-center flex-wrap">
+                        <div class="step-box">Input</div>
+                        <i class="bi bi-arrow-right arrow"></i>
+                        <div class="step-box">Step 1</div>
+                        <i class="bi bi-arrow-right arrow"></i>
+                        <div class="step-box">Step 2</div>
+                        <i class="bi bi-arrow-right arrow"></i>
+                        <div class="step-box">Step 3</div>
+                        <i class="bi bi-arrow-right arrow"></i>
+                        <div class="step-box">Final Output</div>
+                    </div>
+                </div>
+
+                <!-- Interactive Demo -->
+                <div class="demo-section">
+                    <h4><i class="bi bi-play-circle me-2"></i>Try Chain Workflow</h4>
+                    <p>Enter a text to process through our chain workflow example:</p>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <textarea class="form-control" id="chainInput" rows="3" 
+                                placeholder="Enter text to analyze (e.g., 'Analyze the benefits of renewable energy')"></textarea>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-demo w-100" onclick="runChainWorkflow()">
+                                <i class="bi bi-gear me-2"></i>Run Chain Workflow
+                            </button>
+                        </div>
+                    </div>
+                    <div class="loading-spinner" id="chainLoading">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p>Processing through chain steps...</p>
+                    </div>
+                    <div class="result-area" id="chainResult">
+                        <h5><i class="bi bi-check-circle text-success me-2"></i>Chain Processing Results</h5>
+                        <div id="chainOutput"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${pattern == 'parallelization'}">
+                <!-- Parallelization Workflow Content -->
+                <div class="row">
+                    <div class="col-md-8">
+                        <h3><i class="bi bi-info-circle me-2"></i>When to Use Parallelization</h3>
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check-circle text-success me-2"></i>Processing large volumes of similar but independent items</li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i>Tasks requiring multiple independent perspectives</li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i>When processing time is critical and tasks are parallelizable</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="use-case-card">
+                            <h5><i class="bi bi-lightbulb me-2"></i>Example Use Cases</h5>
+                            <small>
+                                • Stakeholder analysis<br>
+                                • Multi-document summarization<br>
+                                • Consensus building
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workflow Diagram -->
+                <div class="workflow-diagram">
+                    <h4 class="mb-3">Parallelization Workflow Flow</h4>
+                    <div class="text-center">
+                        <div class="step-box">Input Task</div>
+                        <br><i class="bi bi-arrow-down arrow"></i><br>
+                        <div class="d-flex justify-content-center flex-wrap">
+                            <div class="step-box">Worker 1</div>
+                            <div class="step-box">Worker 2</div>
+                            <div class="step-box">Worker 3</div>
+                            <div class="step-box">Worker 4</div>
+                        </div>
+                        <br><i class="bi bi-arrow-down arrow"></i><br>
+                        <div class="step-box">Aggregated Result</div>
+                    </div>
+                </div>
+
+                <!-- Interactive Demo -->
+                <div class="demo-section">
+                    <h4><i class="bi bi-play-circle me-2"></i>Try Parallelization Workflow</h4>
+                    <p>Enter a topic to analyze from multiple perspectives simultaneously:</p>
+                    <div class="row">
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" id="parallelInput" 
+                                placeholder="Enter topic (e.g., 'impact of AI on different industries')">
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-demo w-100" onclick="runParallelWorkflow()">
+                                <i class="bi bi-diagram-2 me-2"></i>Run Parallel Analysis
+                            </button>
+                        </div>
+                    </div>
+                    <div class="loading-spinner" id="parallelLoading">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p>Running parallel analysis...</p>
+                    </div>
+                    <div class="result-area" id="parallelResult">
+                        <h5><i class="bi bi-check-circle text-success me-2"></i>Parallel Analysis Results</h5>
+                        <div id="parallelOutput"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Implementation Code Section -->
+            <div class="mt-5">
+                <h3><i class="bi bi-code-slash me-2"></i>Spring AI Implementation</h3>
+                
+                <!-- Tabs for different implementation aspects -->
+                <ul class="nav nav-tabs implementation-tabs" id="implementationTab">
+                    <li class="nav-item">
+                        <a class="nav-link active" id="basic-tab" data-bs-toggle="tab" href="#basic">Basic Implementation</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="advanced-tab" data-bs-toggle="tab" href="#advanced">Advanced Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" id="usage-tab" data-bs-toggle="tab" href="#usage">Usage Examples</a>
+                    </li>
+                </ul>
+
+                <div class="tab-content mt-3">
+                    <div class="tab-pane fade show active" id="basic">
+                        <div class="code-section">
+                            <div class="code-header">
+                                <i class="bi bi-file-code me-2"></i>Basic Spring AI Implementation
+                            </div>
+                            <pre><code class="language-java" th:switch="${pattern}">
+<span th:case="'chain'">public class ChainWorkflow {
+    private final ChatClient chatClient;
+    private final String[] systemPrompts;
+
+    // Processes input through a series of prompts, where each step's output
+    // becomes input for the next step in the chain.     
+    public String chain(String userInput) {
+        String response = userInput;
+        for (String prompt : systemPrompts) {
+            // Combine the system prompt with previous response
+            String input = String.format("{%s}\n {%s}", prompt, response);
+            // Process through the LLM and capture output
+            response = chatClient.prompt(input).call().content();
+        }
+        return response;
+    }
+}</span>
+<span th:case="'parallelization'">public class ParallelizationWorkflow {
+    private final ChatClient chatClient;
+    
+    public List&lt;String&gt; parallel(String systemPrompt, List&lt;String&gt; inputs, int maxWorkers) {
+        // Create parallel streams for concurrent processing
+        return inputs.parallelStream()
+            .limit(maxWorkers)
+            .map(input -> {
+                String fullPrompt = systemPrompt + "\n\nInput: " + input;
+                return chatClient.prompt(fullPrompt).call().content();
+            })
+            .collect(Collectors.toList());
+    }
+}</span>
+<span th:case="'routing'">public class RoutingWorkflow {
+    private final ChatClient chatClient;
+    
+    public String route(String input, Map&lt;String, String&gt; routes) {
+        // Determine the best route for the input
+        String routingPrompt = "Classify the following input into one of these categories: " 
+            + String.join(", ", routes.keySet()) + "\n\nInput: " + input;
+        
+        String category = chatClient.prompt(routingPrompt).call().content().toLowerCase();
+        
+        // Route to the appropriate specialized handler
+        String specializedPrompt = routes.getOrDefault(category, routes.get("general"));
+        return chatClient.prompt(specializedPrompt + "\n\nInput: " + input).call().content();
+    }
+}</span>
+<span th:case="'orchestrator-workers'">public class OrchestratorWorkersWorkflow {
+    private final ChatClient chatClient;
+    
+    public WorkerResponse process(String taskDescription) {
+        // 1. Orchestrator analyzes task and determines subtasks
+        String orchestratorPrompt = "Break down this task into specific subtasks: " + taskDescription;
+        OrchestratorResponse orchestratorResponse = chatClient.prompt(orchestratorPrompt)
+            .call().entity(OrchestratorResponse.class);
+
+        // 2. Workers process subtasks in parallel
+        List&lt;String&gt; workerResponses = orchestratorResponse.subtasks().parallelStream()
+            .map(subtask -> chatClient.prompt("Complete this subtask: " + subtask).call().content())
+            .collect(Collectors.toList());
+
+        // 3. Results are combined into final response
+        return new WorkerResponse(orchestratorResponse.analysis(), workerResponses);
+    }
+}</span>
+<span th:case="'evaluator-optimizer'">public class EvaluatorOptimizerWorkflow {
+    private final ChatClient chatClient;
+    
+    public RefinedResponse loop(String task) {
+        String solution = generateInitialSolution(task);
+        List&lt;String&gt; chainOfThought = new ArrayList&lt;&gt;();
+        
+        for (int iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
+            EvaluationResponse evaluation = evaluateSolution(solution, task);
+            chainOfThought.add("Iteration " + (iteration + 1) + ": " + evaluation.feedback());
+            
+            if (evaluation.status() == EvaluationStatus.PASS) {
+                break;
+            }
+            
+            solution = refineSolution(solution, evaluation.feedback(), task);
+        }
+        
+        return new RefinedResponse(solution, chainOfThought);
+    }
+}</span>
+                            </code></pre>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="advanced">
+                        <div class="code-section">
+                            <div class="code-header">
+                                <i class="bi bi-gear me-2"></i>Advanced Configuration & Error Handling
+                            </div>
+                            <pre><code class="language-java">@Configuration
+public class WorkflowConfiguration {
+    
+    @Bean
+    public ChatClient workflowChatClient(ChatClient.Builder builder) {
+        return builder
+            .defaultSystem("You are an expert AI assistant for workflow processing.")
+            .defaultAdvisors(
+                new QuestionAnswerAdvisor(vectorStore),
+                PromptChatMemoryAdvisor.builder()
+                    .maxMessages(10)
+                    .build()
+            )
+            .build();
+    }
+    
+    @Bean
+    public TaskExecutor workflowTaskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(8);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("workflow-");
+        executor.initialize();
+        return executor;
+    }
+}</code></pre>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="usage">
+                        <div class="code-section">
+                            <div class="code-header">
+                                <i class="bi bi-play me-2"></i>Usage Examples
+                            </div>
+                            <pre><code class="language-java" th:switch="${pattern}">
+<span th:case="'chain'">// Chain Workflow Usage Example
+@Service
+public class ContentAnalysisService {
+    private final ChainWorkflow chainWorkflow;
+    
+    public String analyzeContent(String content) {
+        String[] analysisSteps = {
+            "Extract key themes from this content:",
+            "Identify the target audience for this content:",
+            "Suggest improvements for better engagement:",
+            "Provide a final summary with recommendations:"
+        };
+        
+        ChainWorkflow workflow = new ChainWorkflow(chatClient, analysisSteps);
+        return workflow.chain(content);
+    }
+}</span>
+<span th:case="'parallelization'">// Parallelization Workflow Usage Example
+@Service
+public class StakeholderAnalysisService {
+    private final ParallelizationWorkflow parallelWorkflow;
+    
+    public List&lt;String&gt; analyzeStakeholders(String businessChange) {
+        List&lt;String&gt; stakeholders = Arrays.asList(
+            "Customers: How will this change affect customer experience?",
+            "Employees: What impact will this have on staff?",
+            "Investors: How will this affect financial returns?",
+            "Suppliers: What changes are needed in supply chain?"
+        );
+        
+        return parallelWorkflow.parallel(
+            "Analyze the impact of this business change:",
+            stakeholders,
+            4
+        );
+    }
+}</span>
+<span th:case="'routing'">// Routing Workflow Usage Example
+@Service
+public class CustomerSupportService {
+    private final RoutingWorkflow routingWorkflow;
+    
+    public String handleCustomerQuery(String query) {
+        Map&lt;String, String&gt; routes = Map.of(
+            "billing", "You are a billing specialist. Help resolve billing issues...",
+            "technical", "You are a technical support engineer. Help solve technical problems...",
+            "general", "You are a customer service representative. Help with general inquiries..."
+        );
+        
+        return routingWorkflow.route(query, routes);
+    }
+}</span>
+<span th:case="'orchestrator-workers'">// Orchestrator-Workers Usage Example
+@Service
+public class DocumentationService {
+    private final OrchestratorWorkersWorkflow workflow;
+    
+    public WorkerResponse generateDocumentation(String apiEndpoint) {
+        return workflow.process(
+            "Generate both technical and user-friendly documentation for: " + apiEndpoint
+        );
+    }
+}</span>
+<span th:case="'evaluator-optimizer'">// Evaluator-Optimizer Usage Example
+@Service
+public class CodeGenerationService {
+    private final EvaluatorOptimizerWorkflow workflow;
+    
+    public RefinedResponse generateOptimizedCode(String requirements) {
+        return workflow.loop(
+            "Create a Java class implementing: " + requirements
+        );
+    }
+}</span>
+                            </code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Best Practices Section -->
+            <div class="mt-5">
+                <h3><i class="bi bi-star me-2"></i>Best Practices</h3>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card border-0 h-100" style="background: #e8f5e8;">
+                            <div class="card-body">
+                                <h5 class="text-success"><i class="bi bi-check-circle me-2"></i>Do</h5>
+                                <ul class="small" th:switch="${pattern}">
+                                    <li th:case="'chain'">Keep steps focused and single-purpose</li>
+                                    <li th:case="'chain'">Validate outputs between steps</li>
+                                    <li th:case="'chain'">Design for graceful degradation</li>
+                                    <li th:case="'parallelization'">Ensure tasks are truly independent</li>
+                                    <li th:case="'parallelization'">Implement proper aggregation logic</li>
+                                    <li th:case="'parallelization'">Monitor resource usage</li>
+                                    <li th:case="'routing'">Create clear classification criteria</li>
+                                    <li th:case="'routing'">Test routing accuracy thoroughly</li>
+                                    <li th:case="'routing'">Provide fallback routes</li>
+                                    <li th:case="'orchestrator-workers'">Keep orchestrator logic simple</li>
+                                    <li th:case="'orchestrator-workers'">Design workers as independent services</li>
+                                    <li th:case="'orchestrator-workers'">Implement proper error handling</li>
+                                    <li th:case="'evaluator-optimizer'">Set clear evaluation criteria</li>
+                                    <li th:case="'evaluator-optimizer'">Limit iteration count</li>
+                                    <li th:case="'evaluator-optimizer'">Track improvement metrics</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-0 h-100" style="background: #ffe8e8;">
+                            <div class="card-body">
+                                <h5 class="text-danger"><i class="bi bi-x-circle me-2"></i>Don't</h5>
+                                <ul class="small" th:switch="${pattern}">
+                                    <li th:case="'chain'">Create overly long chains</li>
+                                    <li th:case="'chain'">Skip error handling between steps</li>
+                                    <li th:case="'chain'">Make steps too dependent on exact formats</li>
+                                    <li th:case="'parallelization'">Parallelize dependent tasks</li>
+                                    <li th:case="'parallelization'">Ignore synchronization needs</li>
+                                    <li th:case="'parallelization'">Create too many parallel workers</li>
+                                    <li th:case="'routing'">Use ambiguous routing criteria</li>
+                                    <li th:case="'routing'">Skip validation of routing decisions</li>
+                                    <li th:case="'routing'">Create overlapping routes</li>
+                                    <li th:case="'orchestrator-workers'">Make orchestrator too complex</li>
+                                    <li th:case="'orchestrator-workers'">Tightly couple workers</li>
+                                    <li th:case="'orchestrator-workers'">Skip coordination logic</li>
+                                    <li th:case="'evaluator-optimizer'">Run infinite loops</li>
+                                    <li th:case="'evaluator-optimizer'">Use vague evaluation criteria</li>
+                                    <li th:case="'evaluator-optimizer'">Skip convergence checks</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="d-flex justify-content-between mt-5">
+                <a href="/agentic-workflows" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Overview
+                </a>
+                <a href="/chat" class="btn btn-demo">
+                    <i class="bi bi-chat-dots me-2"></i>Try in Chat
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+    <script th:inline="javascript">
+        const pattern = /*[[${pattern}]]*/ 'chain';
+        
+        async function runChainWorkflow() {
+            const input = document.getElementById('chainInput').value;
+            if (!input.trim()) {
+                alert('Please enter some text to analyze');
+                return;
+            }
+            
+            showLoading('chainLoading');
+            hideResult('chainResult');
+            
+            try {
+                const response = await fetch(`/api/workflows/chain`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ input: input })
+                });
+                
+                const result = await response.json();
+                showResult('chainResult', 'chainOutput', result);
+            } catch (error) {
+                showError('chainResult', 'chainOutput', 'Error running chain workflow: ' + error.message);
+            } finally {
+                hideLoading('chainLoading');
+            }
+        }
+        
+        async function runParallelWorkflow() {
+            const input = document.getElementById('parallelInput').value;
+            if (!input.trim()) {
+                alert('Please enter a topic to analyze');
+                return;
+            }
+            
+            showLoading('parallelLoading');
+            hideResult('parallelResult');
+            
+            try {
+                const response = await fetch(`/api/workflows/parallel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ input: input })
+                });
+                
+                const result = await response.json();
+                showResult('parallelResult', 'parallelOutput', result);
+            } catch (error) {
+                showError('parallelResult', 'parallelOutput', 'Error running parallel workflow: ' + error.message);
+            } finally {
+                hideLoading('parallelLoading');
+            }
+        }
+        
+        function showLoading(elementId) {
+            document.getElementById(elementId).style.display = 'block';
+        }
+        
+        function hideLoading(elementId) {
+            document.getElementById(elementId).style.display = 'none';
+        }
+        
+        function showResult(resultId, outputId, result) {
+            document.getElementById(resultId).style.display = 'block';
+            const outputElement = document.getElementById(outputId);
+            
+            if (Array.isArray(result.output)) {
+                outputElement.innerHTML = result.output.map((item, index) => 
+                    `<div class="mb-2"><strong>Result ${index + 1}:</strong> ${item}</div>`
+                ).join('');
+            } else {
+                outputElement.innerHTML = `<div>${result.output}</div>`;
+            }
+        }
+        
+        function hideResult(elementId) {
+            document.getElementById(elementId).style.display = 'none';
+        }
+        
+        function showError(resultId, outputId, message) {
+            document.getElementById(resultId).style.display = 'block';
+            document.getElementById(resultId).className = 'result-area bg-danger text-white';
+            document.getElementById(outputId).innerHTML = `<i class="bi bi-exclamation-triangle me-2"></i>${message}`;
+        }
+    </script>
+</body>
+</html>

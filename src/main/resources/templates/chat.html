@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant - Agentic Workflows</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 2rem 0;
+        }
+        
+        .chat-container {
+            max-width: 900px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .chat-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(-45deg, #4B286D 0%, #E53293 75%);
+        }
+        .navbar {
+            background: linear-gradient(-45deg, #4B286D 0%, #E53293 75%) !important;
+            box-shadow: 0 4px 20px rgba(75, 40, 109, 0.2);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+        
+        .btn-outline-light {
+            border-color: rgba(255,255,255,0.7);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-outline-light:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: white;
+        }
+        
+        .floating-chat-wrapper {
+            position: fixed;
+            top: 80px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .floating-chat-container {
+            width: 100%;
+            max-width: 900px;
+            height: calc(100vh - 160px);
+            background: white;
+            border-radius: 25px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            animation: floatIn 0.8s ease-out;
+        }
+        
+        @keyframes floatIn {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .floating-chat-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(-45deg, #4B286D 0%, #E53293 75%);
+        }
+        
+        .floating-chat-container::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, 
+                rgba(102, 126, 234, 0.2) 0%, 
+                rgba(118, 75, 162, 0.2) 50%, 
+                rgba(75, 40, 109, 0.2) 100%);
+            border-radius: 27px;
+            z-index: -1;
+            filter: blur(20px);
+        }
+        .chat-header {
+            background: white;
+            border-bottom: 2px solid #D8CBE5;
+            padding: 1.5rem;
+            flex-shrink: 0;
+        }
+        .chat-header h5 {
+            color: #4B286D;
+            font-weight: 700;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #F2EFF4 0%, #FAFAFA 100%);
+        }
+        .message {
+            margin-bottom: 1.5rem;
+            max-width: 75%;
+            animation: fadeInUp 0.3s ease;
+        }
+        .message-user {
+            margin-left: auto;
+        }
+        .message-assistant {
+            margin-right: auto;
+        }
+        .message-content {
+            padding: 1.2rem 1.5rem;
+            border-radius: 20px;
+            word-wrap: break-word;
+            line-height: 1.6;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        .message-user .message-content {
+            background: linear-gradient(-45deg, #4B286D 0%, #613889 75%);
+            color: white;
+            border-bottom-right-radius: 8px;
+            position: relative;
+        }
+        .message-user .message-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="80" cy="20" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="20" cy="60" r="0.5" fill="rgba(255,255,255,0.1)"/></svg>');
+            border-radius: inherit;
+        }
+        .message-assistant .message-content {
+            background: white;
+            border: 2px solid #D8CBE5;
+            border-bottom-left-radius: 8px;
+            color: #371E4F;
+        }
+        .chat-input {
+            background: white;
+            border-top: 2px solid #D8CBE5;
+            padding: 1.5rem;
+            flex-shrink: 0;
+            box-shadow: 0 -4px 20px rgba(75, 40, 109, 0.1);
+        }
+        .input-group {
+            border-radius: 50px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(75, 40, 109, 0.15);
+            border: 2px solid #D8CBE5;
+        }
+        .form-control {
+            border: none;
+            padding: 1.2rem 1.8rem;
+            font-size: 16px;
+            background: white;
+        }
+        .form-control:focus {
+            box-shadow: none;
+            background: white;
+        }
+        .btn-send {
+            background: linear-gradient(-45deg, #4B286D 0%, #613889 75%);
+            border: none;
+            padding: 1.2rem 2rem;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-send:hover {
+            background: linear-gradient(-45deg, #371E4F 0%, #4B286D 75%);
+            color: white;
+            transform: scale(1.05);
+        }
+        .typing-indicator {
+            display: none;
+            padding: 1.2rem 1.5rem;
+            background: white;
+            border-radius: 20px;
+            border-bottom-left-radius: 8px;
+            margin-bottom: 1.5rem;
+            max-width: 75%;
+            border: 2px solid #D8CBE5;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        .typing-dots {
+            display: inline-flex;
+            align-items: center;
+        }
+        .typing-dots span {
+            height: 8px;
+            width: 8px;
+            background: linear-gradient(-45deg, #4B286D 0%, #E53293 75%);
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 3px;
+            animation: typing 1.4s infinite ease-in-out;
+        }
+        .typing-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dots span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing {
+            0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+        
+        /* Structured Response Styles */
+        .structured-response {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            border: 2px solid rgba(75, 40, 109, 0.1);
+            margin: 1rem 0;
+            padding: 1.5rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .response-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(75, 40, 109, 0.1);
+        }
+        
+        .action-button {
+            background: linear-gradient(135deg, #4B286D 0%, #E53293 100%);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            padding: 0.6rem 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(75, 40, 109, 0.3);
+        }
+        
+        .action-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .response-metadata {
+            background: #F4F9F2;
+            border-radius: 8px;
+            padding: 0.8rem;
+            margin-top: 1rem;
+            border-left: 4px solid #66CC00;
+            font-size: 0.85rem;
+            color: #2B8000;
+        }
+        
+        .response-type-badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .type-text { background: #E3F2FD; color: #1976D2; }
+        .type-interactive { background: #FFF3E0; color: #F57C00; }
+        .type-error { background: #FFEBEE; color: #D32F2F; }
+        
+        /* Debug Panel Styles */
+        .debug-panel {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 400px;
+            height: calc(100vh - 100px);
+            background: #1a1a1a;
+            border-radius: 15px;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: none;
+            overflow: hidden;
+        }
+        
+        .debug-header {
+            background: #333;
+            padding: 1rem;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+        
+        .debug-content {
+            padding: 1rem;
+            height: calc(100% - 80px);
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .debug-toggle {
+            position: fixed;
+            top: 90px;
+            right: 30px;
+            background: #1a1a1a;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            border-radius: 25px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            z-index: 1001;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .debug-toggle:hover {
+            background: #00ff00;
+            color: #1a1a1a;
+        }
+        
+        /* Fixed typing indicator */
+        .typing-indicator {
+            display: none;
+            padding: 1.2rem 1.5rem;
+            background: white;
+            border-radius: 20px;
+            border-bottom-left-radius: 8px;
+            margin-bottom: 1.5rem;
+            max-width: 75%;
+            border: 2px solid #D8CBE5;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            position: relative;
+        }
+        
+        /* Streaming response styles */
+        .streaming-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            border: 2px solid rgba(75, 40, 109, 0.2);
+            margin: 1rem 0;
+            padding: 1.5rem;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .streaming-indicator {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background: #4B286D;
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* JSON Debug Panel */
+        .debug-panel {
+            position: fixed;
+            right: -400px;
+            top: 80px;
+            bottom: 20px;
+            width: 380px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 10px 0 0 10px;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.3);
+            transition: right 0.3s ease;
+            z-index: 1001;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .debug-panel.show {
+            right: 0;
+        }
+        
+        .debug-toggle {
+            position: fixed;
+            right: 20px;
+            top: 100px;
+            background: #4B286D;
+            color: white;
+            border: none;
+            border-radius: 8px 0 0 8px;
+            padding: 12px 8px;
+            cursor: pointer;
+            z-index: 1002;
+            writing-mode: vertical-lr;
+            font-weight: 600;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+        
+        .debug-panel.show + .debug-toggle {
+            right: 400px;
+        }
+        
+        .debug-header {
+            background: #2d2d30;
+            padding: 1rem;
+            border-bottom: 1px solid #3e3e42;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .debug-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+        
+        .debug-entry {
+            border-bottom: 1px solid #3e3e42;
+            padding: 1rem;
+        }
+        
+        .debug-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .debug-entry h6 {
+            color: #569cd6;
+            margin: 0 0 0.5rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .debug-entry pre {
+            background: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 0.8rem;
+            margin: 0;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        
+        .json-key { color: #9cdcfe; }
+        .json-string { color: #ce9178; }
+        .json-number { color: #b5cea8; }
+        .json-boolean { color: #569cd6; }
+        .json-null { color: #808080; }
+        
+        /* Streaming indicator */
+        .streaming-indicator {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(75, 40, 109, 0.9);
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+        }
+        
+        .streaming-indicator .pulse {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #66CC00;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.8); }
+        }
+        
+        /* Fixed typing indicator positioning */
+        .typing-indicator {
+            position: sticky;
+            bottom: 0;
+            margin: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                <i class="bi bi-robot me-2"></i>AI Assistant
+            </span>
+            <div class="d-flex align-items-center">
+                <a href="/agentic-workflows" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-diagram-3 me-1"></i>Learn Workflows
+                </a>
+                <a href="/demo" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Demo
+                </a>
+                <div sec:authorize="hasRole('ADMIN')" class="me-2">
+                    <a href="/admin" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-gear-fill me-1"></i>Admin
+                    </a>
+                </div>
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle me-1"></i>
+                    Welcome, <span th:text="${username}">User</span>
+                </span>
+                <form th:action="@{/logout}" method="post" class="d-inline">
+                    <button class="btn btn-outline-light btn-sm" type="submit">
+                        <i class="bi bi-box-arrow-right me-1"></i>Logout
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Floating Chat Wrapper -->
+    <div class="floating-chat-wrapper">
+        <div class="floating-chat-container">
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <div class="container-fluid">
+                    <h5 class="mb-0 text-muted">
+                        <i class="bi bi-chat-dots me-2"></i>Chat with your AI Assistant
+                    </h5>
+                    <small class="text-muted">Ask me anything about AI workflows and patterns!</small>
+                </div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="chat-messages" id="chatMessages">
+            <!-- Welcome message -->
+            <div class="message message-assistant">
+                <div class="message-content">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <div style="width: 40px; height: 40px; background: linear-gradient(-45deg, #66CC00 0%, #2B8000 75%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                            <i class="bi bi-robot" style="color: white; font-size: 18px;"></i>
+                        </div>
+                        <strong style="color: #4B286D; font-size: 18px;">AI Assistant</strong>
+                    </div>
+                    <div style="color: #371E4F;">
+                        Hello! I'm your AI Assistant with advanced agentic capabilities. I can help you with:
+                        <ul style="margin: 1rem 0 0 0; padding-left: 1.5rem; color: #613889;">
+                            <li style="margin-bottom: 0.5rem;"><span style="color: #66CC00;">●</span> Learning AI workflow patterns</li>
+                            <li style="margin-bottom: 0.5rem;"><span style="color: #66CC00;">●</span> Complex multi-step processes (/chain)</li>
+                            <li style="margin-bottom: 0.5rem;"><span style="color: #66CC00;">●</span> Parallel analysis tasks (/parallel)</li>
+                            <li style="margin-bottom: 0.5rem;"><span style="color: #66CC00;">●</span> Smart request routing (/route)</li>
+                            <li style="margin-bottom: 0.5rem;"><span style="color: #66CC00;">●</span> Educational demonstrations</li>
+                        </ul>
+                        <div style="margin-top: 1rem; padding: 1rem; background: #F4F9F2; border-radius: 12px; border-left: 4px solid #66CC00;">
+                            <strong style="color: #2B8000;">Try typing /help to see all agentic patterns!</strong><br>
+                            <small style="color: #613889;">Or just ask naturally - I'll route you to the best workflow automatically.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Typing indicator -->
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="typing-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <span class="ms-2 text-muted">AI is typing...</span>
+            </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="chat-input">
+            <div class="container-fluid">
+                <form id="chatForm">
+                    <div class="input-group">
+                        <input type="text" id="messageInput" class="form-control" 
+                               placeholder="Type your message here..." autocomplete="off" required>
+                        <button type="submit" class="btn btn-send">
+                            <i class="bi bi-send-fill"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Debug Panel -->
+    <div class="debug-panel" id="debugPanel">
+        <div class="debug-header">
+            🔍 JSON Debug Panel
+            <button onclick="clearDebugLog()" style="float: right; background: #d32f2f; color: white; border: none; border-radius: 4px; padding: 4px 8px; font-size: 0.7rem;">Clear</button>
+        </div>
+        <div class="debug-content" id="debugContent">
+            <div class="debug-entry">
+                <h6>Welcome to Debug Mode</h6>
+                <pre style="color: #ce9178;">Debug panel ready. All JSON responses will appear here.</pre>
+            </div>
+        </div>
+    </div>
+    
+    <button class="debug-toggle" id="debugToggle" onclick="toggleDebugPanel()">
+        DEBUG
+    </button>
+
+    <!-- Streaming Indicator -->
+    <div class="streaming-indicator" id="streamingIndicator">
+        <span class="pulse"></span>Streaming response...
+    </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatMessages = document.getElementById('chatMessages');
+            const chatForm = document.getElementById('chatForm');
+            const messageInput = document.getElementById('messageInput');
+            const typingIndicator = document.getElementById('typingIndicator');
+
+            // Check for demo example from localStorage
+            const demoExample = localStorage.getItem('demoExample');
+            if (demoExample) {
+                localStorage.removeItem('demoExample');
+                // Auto-submit the demo example after a short delay
+                setTimeout(() => {
+                    messageInput.value = demoExample;
+                    chatForm.dispatchEvent(new Event('submit'));
+                }, 1000);
+            }
+
+            // Focus on input
+            messageInput.focus();
+
+            // Scroll to bottom
+            function scrollToBottom() {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // Add message to chat
+            function addMessage(content, isUser = false, structuredData = null) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isUser ? 'message-user' : 'message-assistant'}`;
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                
+                if (isUser) {
+                    contentDiv.innerHTML = content;
+                } else if (structuredData) {
+                    // Handle structured response
+                    contentDiv.appendChild(createStructuredResponse(structuredData));
+                } else {
+                    // Regular text response
+                    contentDiv.innerHTML = content.replace(/\n/g, '<br>');
+                }
+                
+                messageDiv.appendChild(contentDiv);
+                chatMessages.appendChild(messageDiv);
+                scrollToBottom();
+            }
+
+            // Create structured response with interactive elements
+            function createStructuredResponse(data) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'structured-response';
+                
+                // Add type badge
+                if (data.type) {
+                    const badge = document.createElement('span');
+                    badge.className = `response-type-badge type-${data.type}`;
+                    badge.textContent = data.type.charAt(0).toUpperCase() + data.type.slice(1);
+                    wrapper.appendChild(badge);
+                }
+                
+                // Add main content
+                const content = document.createElement('div');
+                content.innerHTML = data.content.replace(/\n/g, '<br>');
+                wrapper.appendChild(content);
+                
+                // Add interactive actions
+                if (data.actions && data.actions.length > 0) {
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'response-actions';
+                    
+                    data.actions.forEach(action => {
+                        const button = document.createElement('button');
+                        button.className = 'action-button';
+                        button.innerHTML = action.label;
+                        button.title = action.description;
+                        button.onclick = () => handleActionClick(action);
+                        actionsDiv.appendChild(button);
+                    });
+                    
+                    wrapper.appendChild(actionsDiv);
+                }
+                
+                // Add metadata if available
+                if (data.metadata && Object.keys(data.metadata).length > 0) {
+                    const metadataDiv = document.createElement('div');
+                    metadataDiv.className = 'response-metadata';
+                    metadataDiv.innerHTML = '<strong>📊 Response Info:</strong><br>' + 
+                        Object.entries(data.metadata)
+                            .filter(([key]) => key !== 'error') // Skip error metadata
+                            .map(([key, value]) => 
+                                `<small>${key.replace(/_/g, ' ')}: ${value}</small>`
+                            ).join('<br>');
+                    wrapper.appendChild(metadataDiv);
+                }
+                
+                return wrapper;
+            }
+
+            // Handle action button clicks
+            function handleActionClick(action) {
+                console.log('Action clicked:', action);
+                
+                // Add user message showing the action taken
+                addMessage(`🎯 ${action.label}`, true);
+                
+                // Show typing and simulate action processing
+                showTyping();
+                
+                // Simulate different action responses
+                setTimeout(() => {
+                    hideTyping();
+                    
+                    switch (action.id) {
+                        case 'get_help':
+                            addMessage(`Here are the available commands:
+                            
+🤖 Learn about AI workflow patterns
+🔧 Get help with demonstrations  
+📅 Schedule demos or consultations
+💬 General questions about AI capabilities
+
+You can also ask questions like:
+• "What are the 5 agentic patterns?"
+• "How does chain workflow work?"
+• "Can you show me a parallel processing example?"`);
+                            break;
+                            
+                        case 'schedule_appointment':
+                            addMessage("I'd be happy to help you schedule a demo! What type of AI workflow would you like to explore? (Chain, Parallelization, Routing, Orchestrator-Workers, or Evaluator-Optimizer)", false);
+                            break;
+                            
+                        case 'view_examples':
+                            addMessage(`Here are some example AI workflow demonstrations:
+                            
+🔗 **Chain Workflow** - Sequential content analysis
+🔀 **Parallelization** - Multi-perspective analysis  
+🎯 **Routing** - Intelligent task classification
+👥 **Orchestrator-Workers** - Coordinated problem solving
+🔄 **Evaluator-Optimizer** - Iterative improvement
+
+Would you like to try any of these patterns?`);
+                            break;
+                            
+                        case 'help_guide':
+                            addMessage(`Let's explore AI workflows step by step:
+                            
+📚 **Step 1:** Visit /agentic-workflows to see all patterns
+🎯 **Step 2:** Choose a pattern that interests you
+💻 **Step 3:** Try the interactive examples  
+🔍 **Step 4:** Examine the Spring AI code implementations
+
+What specific AI pattern would you like to learn about?`);
+                            break;
+                            
+                        default:
+                            addMessage(`Action "${action.label}" executed successfully! This demonstrates how interactive buttons can trigger specific responses.`);
+                    }
+                }, 1000);
+            }
+
+            // Show/hide typing indicator
+            function showTyping() {
+                typingIndicator.style.display = 'block';
+                scrollToBottom();
+            }
+
+            function hideTyping() {
+                typingIndicator.style.display = 'none';
+            }
+
+            // Streaming response handler
+            async function handleStreamingResponse(question) {
+                // Add user message
+                addMessage(question, true);
+                messageInput.value = '';
+                
+                // Show typing indicator
+                showTyping();
+                
+                try {
+                    const response = await fetch(`/user/assistant/stream?question=${encodeURIComponent(question)}`);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    if (!response.body) {
+                        throw new Error('Streaming not supported');
+                    }
+                    
+                    hideTyping();
+                    
+                    // Create a streaming message container
+                    const streamingMessageDiv = document.createElement('div');
+                    streamingMessageDiv.className = 'message message-assistant';
+                    
+                    const streamingContentDiv = document.createElement('div');
+                    streamingContentDiv.className = 'message-content streaming-content';
+                    streamingContentDiv.innerHTML = '<div class="streaming-indicator">🔄 Streaming...</div><div id="streamContent"></div>';
+                    
+                    streamingMessageDiv.appendChild(streamingContentDiv);
+                    chatMessages.appendChild(streamingMessageDiv);
+                    scrollToBottom();
+                    
+                    const streamContent = streamingContentDiv.querySelector('#streamContent');
+                    
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+                    let isComplete = false;
+                    
+                    while (!isComplete) {
+                        const { value, done } = await reader.read();
+                        
+                        if (done) {
+                            isComplete = true;
+                            break;
+                        }
+                        
+                        const chunk = decoder.decode(value, { stream: true });
+                        
+                        if (chunk.includes('---STRUCTURED_RESPONSE---')) {
+                            const parts = chunk.split('---STRUCTURED_RESPONSE---');
+                            
+                            // Add any remaining content before the structured response
+                            if (parts[0]) {
+                                buffer += parts[0];
+                                streamContent.innerHTML = buffer.replace(/\n/g, '<br>');
+                            }
+                            
+                            // Parse and display the structured response
+                            if (parts[1]) {
+                                try {
+                                    const structuredData = JSON.parse(parts[1].trim());
+                                    
+                                    // Replace the streaming content with structured response
+                                    streamingContentDiv.innerHTML = '';
+                                    streamingContentDiv.appendChild(createStructuredResponse(structuredData));
+                                    
+                                } catch (e) {
+                                    console.error('Error parsing structured response:', e);
+                                    streamContent.innerHTML = (buffer + parts[1]).replace(/\n/g, '<br>');
+                                }
+                            }
+                            
+                            isComplete = true;
+                        } else {
+                            buffer += chunk;
+                            streamContent.innerHTML = buffer.replace(/\n/g, '<br>');
+                            scrollToBottom();
+                        }
+                    }
+                    
+                    // Remove streaming indicator if still present
+                    const indicator = streamingContentDiv.querySelector('.streaming-indicator');
+                    if (indicator) indicator.remove();
+                    
+                } catch (error) {
+                    hideTyping();
+                    addMessage('Sorry, I encountered an error. Please try again.');
+                    console.error('Streaming Error:', error);
+                }
+            }
+
+            // Form submission
+            chatForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const message = messageInput.value.trim();
+                if (!message) return;
+
+                // Use streaming response handler
+                await handleStreamingResponse(message);
+                messageInput.focus();
+            });
+
+            // Handle enter key
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    chatForm.dispatchEvent(new Event('submit'));
+                }
+            });
+
+            // Debug panel functionality
+            window.toggleDebugPanel = function() {
+                const panel = document.getElementById('debugPanel');
+                panel.classList.toggle('show');
+            };
+
+            window.clearDebugLog = function() {
+                const debugContent = document.getElementById('debugContent');
+                debugContent.innerHTML = `
+                    <div class="debug-entry">
+                        <h6>Debug Log Cleared</h6>
+                        <pre style="color: #ce9178;">Debug panel ready. All JSON responses will appear here.</pre>
+                    </div>
+                `;
+            };
+
+            function logDebug(title, data) {
+                const debugContent = document.getElementById('debugContent');
+                const entry = document.createElement('div');
+                entry.className = 'debug-entry';
+                entry.innerHTML = `
+                    <h6>${title}</h6>
+                    <pre>${typeof data === 'object' ? JSON.stringify(data, null, 2) : data}</pre>
+                `;
+                debugContent.appendChild(entry);
+                debugContent.scrollTop = debugContent.scrollHeight;
+            }
+        });
+    </script>
+</body>
+</html>
